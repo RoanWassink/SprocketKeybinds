@@ -1,0 +1,7 @@
+bin/
+obj/
+backups/
+work/
+outputs/
+*.dll
+*.pdb

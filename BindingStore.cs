@@ -44,6 +44,13 @@ internal sealed class BindingStore
         else File.Move(temp, path);
         if (Editing) snapshot = new(Values, StringComparer.Ordinal);
     }
+    internal bool MigrateIdentity(string oldIdentity, string newIdentity)
+    {
+        if (Editing) throw new InvalidOperationException("Migrate identities outside a menu edit session.");
+        if (Values.ContainsKey(newIdentity) || !Values.TryGetValue(oldIdentity, out var saved)) return false;
+        var remapped = BindingIdentityMigration.Remap(saved, oldIdentity, newIdentity);
+        return ImportOnce(newIdentity, remapped); // Atomic save; failure removes only the new record.
+    }
     public void Rollback()
     {
         if (snapshot != null) Values = new(snapshot, StringComparer.Ordinal);

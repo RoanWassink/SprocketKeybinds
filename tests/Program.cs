@@ -83,6 +83,57 @@ try
     transaction.Values[identity] = unbound; transaction.Commit();
     var restarted = new BindingStore(Path.Combine(temp, "grouping.json")); restarted.Load();
     Check(restarted.Values[identity] == unbound && !restarted.ImportOnce(identity, "old key"), "explicit unbound persists and blocks legacy reimport");
+    const string oldId = "legacy.sight/toggle", newId = "sprocket.sight/toggle";
+    string FullOverrides(string id) => JsonSerializer.Serialize(new { bindings = new[] {
+        new { action = "Mod/toggle", id = BindingStore.StableGuid(id, "binding0"), path = "", interactions = "hold(duration=0.5)", processors = "null" },
+        new { action = "Mod/toggle", id = BindingStore.StableGuid(id, "binding1"), path = "<Mouse>/middleButton", interactions = "press", processors = "invert" }
+    }});
+    var migratePath = Path.Combine(temp, "identity-migration.json");
+    var identities = new BindingStore(migratePath);
+    var sourceJson = FullOverrides(oldId);
+    identities.Values[oldId] = sourceJson; identities.Commit();
+    Check(identities.MigrateIdentity(oldId, newId), "full identity migration persisted");
+    Check(identities.Values[oldId] == sourceJson, "old record preserved byte-for-byte for rollback");
+    using (var mapped = JsonDocument.Parse(identities.Values[newId]))
+    {
+        var slots = mapped.RootElement.GetProperty("bindings");
+        Check(slots[0].GetProperty("path").GetString() == "" && slots[1].GetProperty("path").GetString() == "<Mouse>/middleButton", "primary unbound and secondary path preserved");
+        Check(slots[0].GetProperty("interactions").GetString() == "hold(duration=0.5)" && slots[1].GetProperty("processors").GetString() == "invert", "interactions and processors preserved");
+        Check(slots[0].GetProperty("id").GetString() == BindingStore.StableGuid(newId, "binding0") && slots[1].GetProperty("id").GetString() == BindingStore.StableGuid(newId, "binding1"), "both deterministic binding GUIDs remapped");
+    }
+    var reloadedMigration = new BindingStore(migratePath); reloadedMigration.Load();
+    Check(reloadedMigration.Values[newId] == identities.Values[newId], "migrated slots survive restart");
+    Check(!identities.MigrateIdentity(oldId, newId), "migration repeated without overwriting target");
+    identities.Values[newId] = "";
+    Check(!identities.MigrateIdentity(oldId, newId) && identities.Values[newId] == "", "even empty target record wins");
+    identities.Values[newId] = "{\"bindings\":[]}";
+    Check(!identities.MigrateIdentity(oldId, newId), "target factory-reset record wins");
+    identities.Values[newId] = FullOverrides(newId);
+    Check(!identities.MigrateIdentity(oldId, newId) && identities.Values[newId] == FullOverrides(newId), "explicit unbound target slots win unchanged");
+    Check(!identities.MigrateIdentity("absent.sight/toggle", "new.sight/toggle"), "missing source is no-op");
+    identities.Begin(); Reject(() => identities.MigrateIdentity(oldId, "new.sight/toggle"), "identity migration rejects edit transaction"); identities.End();
+    var renamed = BindingIdentityMigration.Remap(sourceJson, oldId, "sprocket.sight/activate");
+    Check(JsonDocument.Parse(renamed).RootElement.GetProperty("bindings")[1].GetProperty("action").GetString() == "Mod/activate", "action name also remapped");
+    var actionGuidJson = sourceJson.Replace("Mod/toggle", BindingStore.StableGuid(oldId, "action"));
+    Check(BindingIdentityMigration.Remap(actionGuidJson, oldId, newId).Contains(BindingStore.StableGuid(newId, "action")), "GUID-form action remapped");
+    var resetTarget = "sprocket.sight/reset";
+    identities.Values["legacy.sight/reset"] = "{\"bindings\":[]}";
+    Check(identities.MigrateIdentity("legacy.sight/reset", resetTarget) && identities.Values[resetTarget] == "{\"bindings\":[]}", "source factory-reset record migrated without redefining defaults");
+    foreach (var bad in new[] { "{bad", "{\"bindings\":[],\"Version\":2}", "{\"bindings\":[],\"bindings\":[]}", "{\"bindings\":{}}",
+        sourceJson.Replace("<Mouse>/middleButton", "X").Replace("\"processors\":\"invert\"", "\"futureField\":\"invert\""),
+        sourceJson.Replace(BindingStore.StableGuid(oldId, "binding1"), BindingStore.StableGuid(oldId, "binding0")),
+        sourceJson.Replace(BindingStore.StableGuid(oldId, "binding1"), Guid.NewGuid().ToString()),
+        sourceJson.Replace("Mod/toggle", "Mod/other"), sourceJson.Replace("\"path\":\"\"", "\"path\":12") })
+    {
+        identities.Values[oldId] = bad;
+        var fileBefore = File.ReadAllBytes(migratePath);
+        Reject(() => identities.MigrateIdentity(oldId, "new.bad/toggle"), "malformed/unknown source rejects atomically");
+        Check(!identities.Values.ContainsKey("new.bad/toggle") && File.ReadAllBytes(migratePath).SequenceEqual(fileBefore), "rejected migration leaves memory and file intact");
+    }
+    var failingMigration = new BindingStore(temp);
+    failingMigration.Values[oldId] = sourceJson;
+    Reject(() => failingMigration.MigrateIdentity(oldId, newId), "identity migration save failure reported");
+    Check(!failingMigration.Values.ContainsKey(newId) && failingMigration.Values[oldId] == sourceJson, "save failure retains source and removes partial target");
     Console.WriteLine($"{passed} checks passed.");
 }
 finally { Directory.Delete(temp, true); }

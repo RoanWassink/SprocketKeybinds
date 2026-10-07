@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace SprocketKeybinds;
 
-[BepInPlugin(Keybinds.PluginGuid, "Sprocket Keybinds", "0.1.5")]
+[BepInPlugin(Keybinds.PluginGuid, "Sprocket Keybinds", "0.1.6")]
 public sealed class Plugin : BasePlugin
 {
     internal static ManualLogSource Logger = null!;
@@ -24,7 +24,7 @@ public sealed class Plugin : BasePlugin
         {
             harmony.PatchAll(typeof(Plugin).Assembly);
             AddComponent<MenuLifetimeDriver>();
-            Log.LogInfo("Sprocket Keybinds 0.1.5: shared API and vanilla keymapping hooks ready.");
+            Log.LogInfo("Sprocket Keybinds 0.1.6: shared API and vanilla keymapping hooks ready.");
         }
         catch (Exception e)
         {

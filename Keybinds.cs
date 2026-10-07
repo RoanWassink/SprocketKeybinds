@@ -92,6 +92,17 @@ public static class Keybinds
         }
         catch { binding.Load(previous); throw; }
     }
+    /// <summary>Migrates both saved override slots before registration; existing target choices win. Available since 0.1.6.</summary>
+    public static bool TryMigrateBindingIdentity(string oldOwner, string oldAction, string newOwner, string newAction)
+    {
+        CheckThread();
+        var source = BindingStore.Identity(oldOwner, oldAction);
+        var target = BindingStore.Identity(newOwner, newAction);
+        if (Store.Editing) throw new InvalidOperationException("Migrate identities outside a menu edit session.");
+        if (entries.ContainsKey(source) || entries.ContainsKey(target))
+            throw new InvalidOperationException("Migrate identities before registering either action.");
+        return Store.MigrateIdentity(source, target);
+    }
     /// <summary>Reports exact effective-path overlaps among mod bindings. Contexts may make an overlap intentional.</summary>
     public static IReadOnlyList<BindingConflict> GetConflicts()
     {

@@ -2,7 +2,7 @@
 
 A shared keybind menu for Sprocket mods, grouped by author or declared mod pack.
 
-**v0.1.5 — beta.** Configure mod controls inside the vanilla Settings menu. Expand author/mod groups, switch between author and pack grouping, and use Clear, Reset, Apply, Accept and Cancel. Personalized bindings survive updates.
+**v0.1.6 — beta.** Configure mod controls inside the vanilla Settings menu. Expand author/mod groups, switch between author and pack grouping, and use Clear, Reset, Apply, Accept and Cancel. Personalized bindings survive updates.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ A shared keybind menu for Sprocket mods, grouped by author or declared mod pack.
 ## Install and update
 
 1. Install a working Sprocket Mod Loader / BepInEx 6 IL2CPP setup, run Sprocket once, then close it. The loader is a separate prerequisite and is not included.
-2. Download **SprocketKeybinds-v0.1.5.zip** from [this release](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.5).
+2. Download **SprocketKeybinds-v0.1.6.zip** from [this release](https://github.com/RoanWassink/SprocketKeybinds/releases/tag/v0.1.6).
 3. In Steam, use Sprocket > Manage > Browse local files. Copy the ZIP's folders into the folder containing Sprocket.exe. Merge folders; keep the internal structure intact.
 4. Keep one copy of each plugin. Back up matching mod files and vehicle saves before updating. Never replace the whole BepInEx folder.
 5. Preserve existing BepInEx/config files, customized thermal-models.json and sound overrides. Install required dependencies separately. Restart the game.
@@ -35,3 +35,9 @@ Made with AI assistance. Mod code is MIT licensed; native Sprocket meshes/icons 
 ## Where to get the separate loader
 
 Use [Hans21223's Sprocket Mod Loader](https://github.com/Hans21223/Sprocket-Mod-Loader) and follow its [manual installation guide](https://github.com/Hans21223/Sprocket-Mod-Loader/blob/main/package/MANUAL-INSTALL.md) or its documented manager installation. That upstream project targets the tested Sprocket version and supplies the Sprocket-specific patch. These mod downloads do not install the loader. Follow one upstream loader method and its update/backup instructions; the creator's supplied ModManager archive is not redistributed here.
+
+## Update in 0.1.6
+
+Compatible addons can now move saved controls to a new addon identity while preserving both binding slots. Existing choices take precedence, including unbound keys. Previous records remain available for rollback. The menu and its controls are unchanged.
+
+New integrations using this helper require API 0.1.6 or later, below 0.2.0. See [the integration guide](INTEGRATION.md).

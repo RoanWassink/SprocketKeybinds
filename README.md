@@ -1,5 +1,7 @@
 # Sprocket Keybinds
 
+<!-- sp-compat {"hamish.sprocket": ">=0.2.55.5", "bepinex.bepinex": "6.0.0-be.788"} -->
+
 A shared keybind menu for Sprocket mods, grouped by author or declared mod pack.
 
 **v0.1.6 — beta.** Configure mod controls inside the vanilla Settings menu. Expand author/mod groups, switch between author and pack grouping, and use Clear, Reset, Apply, Accept and Cancel. Personalized bindings survive updates.
